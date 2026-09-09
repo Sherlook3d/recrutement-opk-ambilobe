@@ -41,7 +41,7 @@
   @media (max-width:520px){ .shell{padding:24px 16px 56px;gap:20px;} }
   .masthead{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
   .masthead .brand{display:flex;align-items:center;gap:14px;}
-  .brand-mark{width:44px;height:44px;color:var(--accent);flex-shrink:0;}
+  .brand-mark{width:44px;height:44px;flex-shrink:0;background:var(--ink);border-radius:12px;padding:8px;object-fit:contain;display:block;box-shadow:var(--shadow);}
   .brand-text{display:flex;flex-direction:column;gap:2px;}
   .brand .eyebrow{font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;}
   .brand h1{margin:0;font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:clamp(30px,5vw,40px);letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;line-height:.95;}
@@ -175,17 +175,7 @@
 <!-- ============ LOGIN GATE ============ -->
 <div class="shell lock-shell" id="view-lock">
   <div class="lock-brand">
-    <svg class="brand-mark" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round">
-      <path d="M50 10 C 26 10 10 28 10 50"/>
-      <path d="M50 10 C 74 10 90 28 90 50 C 90 60 88 68 84 75"/>
-      <path d="M24 30 C 16 39 13 46 13 58"/>
-      <path d="M76 30 C 83 38 87 46 87 56"/>
-      <path d="M31 22 C 39 17 44 15 50 15 C 61 15 71 20 77 30"/>
-      <path d="M21 60 C 21 77 33 89 50 89 C 61 89 69 85 75 79"/>
-      <path d="M50 27 C 37 27 27 38 27 51 C 27 65 35 75 44 79"/>
-      <path d="M50 27 C 63 27 73 37 73 50 C 73 58 69 64 63 68"/>
-      <path d="M50 40 C 45 40 41 44 41 50 C 41 58 45 63 50 67 C 55 63 59 58 59 52 C 59 46 55 42 50 42"/>
-    </svg>
+    <img class="brand-mark" src="logo.png" alt="Test OPK">
     <div>
       <span class="eyebrow">Enrôlement biométrique · Ambilobe</span>
       <h1 style="margin-top:6px;">Test OPK</h1>
@@ -209,17 +199,7 @@
   <div>
     <div class="masthead">
       <div class="brand">
-        <svg class="brand-mark" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round">
-          <path d="M50 10 C 26 10 10 28 10 50"/>
-          <path d="M50 10 C 74 10 90 28 90 50 C 90 60 88 68 84 75"/>
-          <path d="M24 30 C 16 39 13 46 13 58"/>
-          <path d="M76 30 C 83 38 87 46 87 56"/>
-          <path d="M31 22 C 39 17 44 15 50 15 C 61 15 71 20 77 30"/>
-          <path d="M21 60 C 21 77 33 89 50 89 C 61 89 69 85 75 79"/>
-          <path d="M50 27 C 37 27 27 38 27 51 C 27 65 35 75 44 79"/>
-          <path d="M50 27 C 63 27 73 37 73 50 C 73 58 69 64 63 68"/>
-          <path d="M50 40 C 45 40 41 44 41 50 C 41 58 45 63 50 67 C 55 63 59 58 59 52 C 59 46 55 42 50 42"/>
-        </svg>
+        <img class="brand-mark" src="logo.png" alt="Test OPK">
         <div class="brand-text">
           <span class="eyebrow">Enrôlement biométrique · Ambilobe</span>
           <h1>Test OPK</h1>
