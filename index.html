@@ -169,7 +169,7 @@
 
 
 <!-- ============ LOGIN GATE ============ -->
-<div class="shell lock-shell" id="view-lock" hidden>
+<div class="shell lock-shell" id="view-lock">
   <div class="lock-brand">
     <svg class="brand-mark" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round">
       <path d="M50 10 C 26 10 10 28 10 50"/>
@@ -201,7 +201,7 @@
   </div>
 </div>
 
-<div class="shell" id="view-test">
+<div class="shell" id="view-test" hidden>
   <div>
     <div class="masthead">
       <div class="brand">
@@ -387,6 +387,8 @@
 
   var QUEUE_KEY = "opk_pending_queue_v1";
   var POSTE_KEY = "opk_poste_label_v1";
+  var GATE_HASH = "c66cc5f505240994b6a42d74a594ac47777bbb33a685120663e9c855064d3571";
+  var GATE_SESSION_KEY = "opk_gate_unlocked_v1";
 
   var PASSAGES = [
     "Vérifie soigneusement l'orthographe du nom et du prénom avant de valider chaque dossier d'enrôlement.",
@@ -777,6 +779,36 @@
     renderQuiz(); updateQuizProgress(); checkIdentValid();
     showStep(0);
   });
+
+  // ---------- login gate (single shared password) ----------
+  async function sha256Hex(str){
+    var enc = new TextEncoder().encode(str);
+    var buf = await crypto.subtle.digest("SHA-256", enc);
+    var bytes = Array.from(new Uint8Array(buf));
+    return bytes.map(function(b){ return b.toString(16).padStart(2,"0"); }).join("");
+  }
+  function showGate(){ $("view-lock").hidden = false; $("view-test").hidden = true; }
+  function showTest(){ $("view-lock").hidden = true; $("view-test").hidden = false; }
+
+  $("btn-gate-unlock").addEventListener("click", async function(){
+    var val = $("in-gate-pass").value;
+    var hash = "";
+    try{ hash = await sha256Hex(val); }
+    catch(e){ $("gate-error").textContent = "Vérification impossible sur cet appareil/navigateur."; $("gate-error").hidden = false; return; }
+    if(hash === GATE_HASH){
+      try{ sessionStorage.setItem(GATE_SESSION_KEY, "1"); }catch(e){}
+      $("gate-error").hidden = true;
+      showTest();
+    } else {
+      $("gate-error").textContent = "Mot de passe incorrect.";
+      $("gate-error").hidden = false;
+    }
+  });
+  $("in-gate-pass").addEventListener("keydown", function(e){ if(e.key === "Enter") $("btn-gate-unlock").click(); });
+
+  var gateUnlocked = false;
+  try{ gateUnlocked = sessionStorage.getItem(GATE_SESSION_KEY) === "1"; }catch(e){}
+  if(gateUnlocked){ showTest(); } else { showGate(); }
 
   flushQueue();
   showStep(0);
