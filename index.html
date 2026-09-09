@@ -389,7 +389,14 @@
 
   var SUPABASE_URL = "https://bflspzngwctaochwwjpt.supabase.co";
   var SUPABASE_KEY = "sb_publishable_YfwdBcV6NMnpz3AsJtEZ3w_GqiD2c1N";
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // index.html and admin.html share the same origin, so they'd otherwise share
+  // browser storage too. This page must always act as an anonymous visitor —
+  // never load or persist an auth session (in particular, never inherit an
+  // admin login made in the same browser), or inserts get rejected by RLS
+  // (42501) because only the anon role is allowed to insert.
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+  });
 
   var QUEUE_KEY = "opk_pending_queue_v1";
   var POSTE_KEY = "opk_poste_label_v1";
