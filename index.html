@@ -776,7 +776,7 @@
     var typing = scoreTyping();
     var dataEntry = scoreDataEntry();
     var quiz = scoreQuiz();
-    var globalScore = Math.round(0.30*typing.accuracy + 0.20*clamp(100*typing.wpm/35,0,100) + 0.30*dataEntry + 0.20*quiz);
+    var globalScore = Math.round(0.30*typing.accuracy + 0.35*dataEntry + 0.25*clamp(100*typing.wpm/35,0,100) + 0.10*quiz);
     var record = {
       nom: candidate.nom, prenom: candidate.prenom, telephone: candidate.tel,
       wpm: typing.wpm, accuracy: typing.accuracy, errors: typing.errors,
