@@ -305,10 +305,10 @@
               <div class="scan-field"><span class="scan-label">2. Postnom <em>(Fanampin'anarana)</em></span><span class="scan-value" id="card-postnom"></span></div>
               <div class="scan-field"><span class="scan-label">3. Prénom <em>(Anarana hafa)</em></span><span class="scan-value" id="card-prenom"></span></div>
               <div class="scan-field"><span class="scan-label">4. Sexe <em>(Lahy/Vavy)</em></span><span class="scan-value" id="card-sexe"></span></div>
-              <div class="scan-field"><span class="scan-label">5. Date de naissance</span><span class="scan-value" id="card-date"></span></div>
-              <div class="scan-field"><span class="scan-label">6. Lieu de naissance</span><span class="scan-value" id="card-lieu"></span></div>
-              <div class="scan-field"><span class="scan-label">7. Nationalité</span><span class="scan-value" id="card-nationalite"></span></div>
-              <div class="scan-field"><span class="scan-label">8. Profession</span><span class="scan-value" id="card-profession"></span></div>
+              <div class="scan-field"><span class="scan-label">5. Date de naissance <em>(Daty nahaterahana)</em></span><span class="scan-value" id="card-date"></span></div>
+              <div class="scan-field"><span class="scan-label">6. Lieu de naissance <em>(Toerana nahaterahana)</em></span><span class="scan-value" id="card-lieu"></span></div>
+              <div class="scan-field"><span class="scan-label">7. Nationalité <em>(Zom-pirenena)</em></span><span class="scan-value" id="card-nationalite"></span></div>
+              <div class="scan-field"><span class="scan-label">8. Profession <em>(Asa am-perinasa)</em></span><span class="scan-value" id="card-profession"></span></div>
             </div>
           </div>
           <div class="scan-footer">
@@ -323,12 +323,12 @@
       <p class="no-copy-note">&#128274; Copier-coller désactivé sur les champs ci-dessous.</p>
 
       <div class="row2">
-        <div class="field"><label for="in-nom-c">1. Nom de famille</label><input type="text" id="in-nom-c" autocomplete="off"></div>
-        <div class="field"><label for="in-postnom-c">2. Postnom</label><input type="text" id="in-postnom-c" autocomplete="off"></div>
+        <div class="field"><label for="in-nom-c">1. Nom de famille (Anarana)</label><input type="text" id="in-nom-c" autocomplete="off"></div>
+        <div class="field"><label for="in-postnom-c">2. Postnom (Fanampin'anarana)</label><input type="text" id="in-postnom-c" autocomplete="off"></div>
       </div>
       <div class="row2">
-        <div class="field"><label for="in-prenom-c">3. Prénom</label><input type="text" id="in-prenom-c" autocomplete="off"></div>
-        <div class="field"><label for="in-sexe-c">4. Sexe</label>
+        <div class="field"><label for="in-prenom-c">3. Prénom (Anarana hafa)</label><input type="text" id="in-prenom-c" autocomplete="off"></div>
+        <div class="field"><label for="in-sexe-c">4. Sexe (Lahy/Vavy)</label>
           <select id="in-sexe-c">
             <option value="">Sélectionner…</option>
             <option value="M">Masculin</option>
@@ -337,12 +337,12 @@
         </div>
       </div>
       <div class="row2">
-        <div class="field"><label for="in-date-c">5. Date de naissance</label><input type="date" id="in-date-c" autocomplete="off"></div>
-        <div class="field"><label for="in-lieu-c">6. Lieu de naissance</label><input type="text" id="in-lieu-c" autocomplete="off"></div>
+        <div class="field"><label for="in-date-c">5. Date de naissance (Daty nahaterahana)</label><input type="date" id="in-date-c" autocomplete="off"></div>
+        <div class="field"><label for="in-lieu-c">6. Lieu de naissance (Toerana nahaterahana)</label><input type="text" id="in-lieu-c" autocomplete="off"></div>
       </div>
       <div class="row2">
-        <div class="field"><label for="in-nationalite-c">7. Nationalité</label><input type="text" id="in-nationalite-c" autocomplete="off"></div>
-        <div class="field"><label for="in-profession-c">8. Profession</label><input type="text" id="in-profession-c" autocomplete="off"></div>
+        <div class="field"><label for="in-nationalite-c">7. Nationalité (Zom-pirenena)</label><input type="text" id="in-nationalite-c" autocomplete="off"></div>
+        <div class="field"><label for="in-profession-c">8. Profession (Asa am-perinasa)</label><input type="text" id="in-profession-c" autocomplete="off"></div>
       </div>
 
       <div class="actions">
@@ -714,17 +714,31 @@
   }
   function writeQueue(q){ try{ localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }catch(e){} }
 
+  // On a flaky connection a single insert can hang well past the 8s retry
+  // tick; without a timeout, overlapping flushQueue() runs would race to
+  // write the queue back and could silently drop or re-duplicate entries.
+  function insertWithTimeout(record, ms){
+    return Promise.race([
+      sb.from("candidats").insert(record),
+      new Promise(function(_, reject){ setTimeout(function(){ reject(new Error("timeout")); }, ms); })
+    ]);
+  }
+
+  var flushInProgress = false;
   async function flushQueue(){
+    if(flushInProgress) return;
     var q = readQueue();
     if(q.length === 0) return;
+    flushInProgress = true;
     var remaining = [];
     for(var i=0;i<q.length;i++){
       try{
-        var res = await sb.from("candidats").insert(q[i]);
+        var res = await insertWithTimeout(q[i], 10000);
         if(res.error) remaining.push(q[i]);
       }catch(e){ remaining.push(q[i]); }
     }
     writeQueue(remaining);
+    flushInProgress = false;
     updateSyncIndicator();
   }
   function setSyncBanner(state, text){
@@ -748,7 +762,7 @@
 
   async function submitRecord(record){
     try{
-      var res = await sb.from("candidats").insert(record);
+      var res = await insertWithTimeout(record, 10000);
       if(res.error){
         var q = readQueue(); q.push(record); writeQueue(q);
       }
