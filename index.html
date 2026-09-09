@@ -93,6 +93,54 @@
   .fiche-row{display:flex;justify-content:space-between;gap:12px;font-size:14.5px;}
   .fiche-row .k{color:var(--ink-muted);}
   .fiche-row .v{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--ink);letter-spacing:.02em;}
+
+  /* ---- scanned-document transcription card ---- */
+  .scan-wrap{display:flex;flex-direction:column;gap:8px;}
+  .scan-card{
+    background:#faf3e0;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);
+    transform:rotate(-0.4deg);border:1px solid #d8cba3;
+  }
+  .scan-topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    background:#132420;color:#d9efe6;padding:8px 14px;
+    font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;
+  }
+  .scan-watermark{opacity:.75;}
+  .scan-anticheat{background:#c1432c;color:#fff;padding:3px 9px;border-radius:999px;font-weight:700;white-space:nowrap;}
+  .scan-body{display:grid;grid-template-columns:96px 1fr;gap:16px;padding:18px;}
+  @media (max-width:480px){ .scan-body{grid-template-columns:1fr;} .scan-photo{flex-direction:row;align-items:center;} }
+  .scan-photo{display:flex;flex-direction:column;gap:8px;align-items:center;}
+  .scan-avatar{width:72px;height:88px;border:1px solid #c9b98a;border-radius:4px;background:#eee3c4;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .scan-avatar svg{width:44px;height:44px;color:#a89968;}
+  .scan-barcode{width:72px;height:20px;background:repeating-linear-gradient(90deg,#2b2b2b 0 2px,transparent 2px 4px,#2b2b2b 4px 5px,transparent 5px 8px);flex-shrink:0;}
+  .scan-refcode{font-family:"JetBrains Mono",monospace;font-size:9px;color:#7a6f4d;text-align:center;}
+  .scan-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;align-content:start;}
+  @media (max-width:560px){ .scan-fields{grid-template-columns:1fr;} }
+  .scan-field{display:flex;flex-direction:column;gap:1px;}
+  .scan-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:#6b7a5e;font-weight:700;}
+  .scan-label em{font-style:normal;font-weight:400;opacity:.75;}
+  .scan-value{font-size:17px;color:#20345f;line-height:1.25;}
+  .scan-footer{display:flex;justify-content:space-between;align-items:center;padding:9px 18px;background:#f2ead2;border-top:1px dashed #cbb98a;}
+  .scan-sign{font-family:"Caveat",cursive;font-size:19px;color:#1f2a44;}
+  .scan-stamp{width:38px;height:38px;border-radius:50%;border:2px solid #7a8f4a;color:#7a8f4a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;transform:rotate(-12deg);opacity:.7;flex-shrink:0;}
+  .scan-card.zoomed .scan-value{font-size:22px;}
+  .scan-card.zoomed .scan-label{font-size:11px;}
+  .scan-zoom-btn{
+    align-self:flex-end;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.03em;
+    color:var(--ink-faint);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer;
+  }
+  .scan-zoom-btn:hover{color:var(--ink-muted);border-color:var(--ink-faint);}
+  .scan-instruction{
+    display:flex;gap:8px;align-items:flex-start;background:var(--good-wash);color:var(--good);
+    border-radius:8px;padding:10px 14px;font-size:12.5px;line-height:1.5;
+  }
+  .scan-instruction b{font-weight:700;}
+  .field select{
+    font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface-sunken);
+    border:1px solid var(--line);border-radius:10px;padding:11px 13px;width:100%;
+  }
+  .row4{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:480px){ .row4{grid-template-columns:1fr;} }
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
   .stat{background:var(--surface-sunken);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;}
   .stat .num{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;color:var(--accent-strong);}
@@ -181,23 +229,72 @@
       </div>
     </section>
 
-    <!-- Step 2 : saisie de données -->
+    <!-- Step 2 : transcription de dossier -->
     <section class="card" id="step-2" hidden>
       <div>
-        <h2>Saisie de données</h2>
-        <p class="lede">Recopie exactement les informations de la fiche ci-dessous, en utilisant le bon type de champ pour chacune.</p>
+        <h2>Transcription de dossier</h2>
+        <p class="lede">Un agent d'enrôlement doit retranscrire fidèlement un dossier papier dans le système. Recopie exactement les informations du document ci-dessous.</p>
       </div>
-      <div class="fiche no-select" id="fiche-display" oncontextmenu="return false">
-        <div class="fiche-row"><span class="k">N° de dossier</span><span class="v" id="fiche-dossier"></span></div>
-        <div class="fiche-row"><span class="k">Téléphone</span><span class="v" id="fiche-tel"></span></div>
-        <div class="fiche-row"><span class="k">Date de naissance</span><span class="v" id="fiche-date"></span></div>
+
+      <div class="scan-wrap">
+        <div class="scan-card no-select" id="scan-card" oncontextmenu="return false">
+          <div class="scan-topbar">
+            <span class="scan-watermark">Document d'entraînement &middot; fiche d'enrôlement OPK</span>
+            <span class="scan-anticheat">&#128274; Saisie manuelle obligatoire</span>
+          </div>
+          <div class="scan-body">
+            <div class="scan-photo">
+              <div class="scan-avatar">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              </div>
+              <div class="scan-barcode"></div>
+              <div class="scan-refcode" id="scan-ref"></div>
+            </div>
+            <div class="scan-fields">
+              <div class="scan-field"><span class="scan-label">1. Nom de famille <em>(Anarana)</em></span><span class="scan-value" id="card-nom"></span></div>
+              <div class="scan-field"><span class="scan-label">2. Postnom <em>(Fanampin'anarana)</em></span><span class="scan-value" id="card-postnom"></span></div>
+              <div class="scan-field"><span class="scan-label">3. Prénom <em>(Anarana hafa)</em></span><span class="scan-value" id="card-prenom"></span></div>
+              <div class="scan-field"><span class="scan-label">4. Sexe <em>(Lahy/Vavy)</em></span><span class="scan-value" id="card-sexe"></span></div>
+              <div class="scan-field"><span class="scan-label">5. Date de naissance</span><span class="scan-value" id="card-date"></span></div>
+              <div class="scan-field"><span class="scan-label">6. Lieu de naissance</span><span class="scan-value" id="card-lieu"></span></div>
+              <div class="scan-field"><span class="scan-label">7. Nationalité</span><span class="scan-value" id="card-nationalite"></span></div>
+              <div class="scan-field"><span class="scan-label">8. Profession</span><span class="scan-value" id="card-profession"></span></div>
+            </div>
+          </div>
+          <div class="scan-footer">
+            <span class="scan-sign" id="scan-sign"></span>
+            <span class="scan-stamp">OPK</span>
+          </div>
+        </div>
+        <button class="scan-zoom-btn" id="btn-zoom" type="button">&#128269; Agrandir</button>
       </div>
+
+      <p class="scan-instruction"><span>&#128203;</span><span><b>Consigne :</b> transcris fidèlement chaque champ en respectant les majuscules/minuscules et l'orthographe exacte.</span></p>
       <p class="no-copy-note">&#128274; Copier-coller désactivé sur les champs ci-dessous.</p>
-      <div class="row3">
-        <div class="field"><label for="in-dossier">N° de dossier</label><input type="text" id="in-dossier" autocomplete="off"></div>
-        <div class="field"><label for="in-tel-saisie">Téléphone</label><input type="tel" inputmode="numeric" id="in-tel-saisie" autocomplete="off"></div>
-        <div class="field"><label for="in-date-saisie">Date de naissance</label><input type="date" id="in-date-saisie" autocomplete="off"></div>
+
+      <div class="row2">
+        <div class="field"><label for="in-nom-c">1. Nom de famille</label><input type="text" id="in-nom-c" autocomplete="off"></div>
+        <div class="field"><label for="in-postnom-c">2. Postnom</label><input type="text" id="in-postnom-c" autocomplete="off"></div>
       </div>
+      <div class="row2">
+        <div class="field"><label for="in-prenom-c">3. Prénom</label><input type="text" id="in-prenom-c" autocomplete="off"></div>
+        <div class="field"><label for="in-sexe-c">4. Sexe</label>
+          <select id="in-sexe-c">
+            <option value="">Sélectionner…</option>
+            <option value="M">Masculin</option>
+            <option value="F">Féminin</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="in-date-c">5. Date de naissance</label><input type="date" id="in-date-c" autocomplete="off"></div>
+        <div class="field"><label for="in-lieu-c">6. Lieu de naissance</label><input type="text" id="in-lieu-c" autocomplete="off"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="in-nationalite-c">7. Nationalité</label><input type="text" id="in-nationalite-c" autocomplete="off"></div>
+        <div class="field"><label for="in-profession-c">8. Profession</label><input type="text" id="in-profession-c" autocomplete="off"></div>
+      </div>
+
       <div class="actions">
         <span class="hint">Étape 3 / 5</span>
         <button class="btn btn-primary" id="btn-next-saisie" type="button" disabled>Suivant &rarr;</button>
@@ -258,6 +355,13 @@
   var HANDWRITING_FONTS = ["Kalam", "Caveat", "Patrick Hand", "Shadows Into Light"];
   var INK_COLORS = ["#20345f", "#2b2b2b", "#1f4a4a"];
 
+  var SURNAMES = ["RAMIARAMANANA","RAKOTONDRABE","RAZANAJATOVO","ANDRIANARISOA","RASOLOFOMANANA","RAZAFINDRAKOTO","ANDRIAMBOLOLONA","RAKOTOMALALA"];
+  var MIDDLENAMES = ["Fenosoa","Voahangy","Tojo","Miora","Faniry","Ando","Zo","Hanta"];
+  var FIRSTNAMES = ["Claudia","Hery","Nirina","Fetra","Tahina","Mialy","Rivo","Sitraka"];
+  var TOWNS = ["Antsiranana","Ambilobe","Mahajanga","Toamasina","Fianarantsoa","Toliara","Antsirabe","Antananarivo"];
+  var PROFESSIONS = ["Mpitsabo mpanampy (Infirmière)","Mpampianatra (Enseignant)","Mpivarotra (Commerçant)","Tantsaha (Agriculteur)","Mpanao gazety (Journaliste)","Mpandraharaha (Entrepreneur)"];
+  var CARD_SIGN_NAMES = ["R. Rakotondrabe","H. Andrianasolo","M. Razanamahenina","T. Rasoamampionona"];
+
   var QUIZ = [
     { q: "Quel raccourci clavier permet de copier un texte sélectionné ?", opts: ["Ctrl + C", "Ctrl + V", "Ctrl + X", "Ctrl + Z"], correct: 0 },
     { q: "Quel format est le plus adapté pour archiver un dossier scanné de plusieurs pages ?", opts: ["MP3", "EXE", "PDF", "TXT"], correct: 2 },
@@ -271,7 +375,8 @@
   var selectedPassage = PASSAGES[0];
   var selectedFont = HANDWRITING_FONTS[0];
   var selectedInk = INK_COLORS[0];
-  var ficheTarget = { dossier:"", tel:"", date:"" };
+  var selectedCardFont = HANDWRITING_FONTS[0];
+  var cardTarget = null;
   var STEP_COUNT = 5;
 
   function $(id){ return document.getElementById(id); }
@@ -295,7 +400,11 @@
     el.addEventListener("paste", function(e){ e.preventDefault(); });
     el.addEventListener("drop", function(e){ e.preventDefault(); });
   }
-  ["in-typing","in-dossier","in-tel-saisie","in-date-saisie"].forEach(function(id){ blockPaste($(id)); });
+  ["in-typing","in-nom-c","in-postnom-c","in-prenom-c","in-lieu-c","in-nationalite-c","in-profession-c","in-date-c"].forEach(function(id){ blockPaste($(id)); });
+
+  $("btn-zoom").addEventListener("click", function(){
+    $("scan-card").classList.toggle("zoomed");
+  });
 
   var STEP_NAMES = ["Identification","Frappe","Saisie","Bureautique","Terminé"];
   function renderGauge(){
@@ -324,15 +433,37 @@
   }
   ["in-nom","in-prenom","in-tel"].forEach(function(id){ $(id).addEventListener("input", checkIdentValid); });
 
-  function newFicheTarget(){
-    var dossier = "OPK-" + randInt(1000,9999);
-    var prefix = pick(["032","033","034","038"]);
-    var d1 = randInt(10,99), d2 = randInt(100,999), d3 = randInt(10,99);
-    var tel = prefix + " " + d1 + " " + d2 + " " + d3;
-    var year = randInt(1988,2006), month = randInt(1,12), day = randInt(1,28);
-    var dateIso = year + "-" + pad2(month) + "-" + pad2(day);
-    var dateFr = pad2(day) + "/" + pad2(month) + "/" + year;
-    return { dossier:dossier, tel:tel, telDigits:tel.replace(/\s/g,""), dateIso:dateIso, dateFr:dateFr };
+  function newCardTarget(){
+    var sexe = pick(["M","F"]);
+    var year = randInt(1985,2005), month = randInt(1,12), day = randInt(1,28);
+    return {
+      nom: pick(SURNAMES),
+      postnom: pick(MIDDLENAMES),
+      prenom: pick(FIRSTNAMES),
+      sexe: sexe,
+      dateIso: year + "-" + pad2(month) + "-" + pad2(day),
+      dateFr: pad2(day) + "/" + pad2(month) + "/" + year,
+      lieu: pick(TOWNS),
+      nationalite: "Malagasy",
+      profession: pick(PROFESSIONS),
+      ref: "OPK-" + randInt(1000,9999)
+    };
+  }
+
+  function renderCard(){
+    $("card-nom").textContent = cardTarget.nom;
+    $("card-postnom").textContent = cardTarget.postnom;
+    $("card-prenom").textContent = cardTarget.prenom;
+    $("card-sexe").textContent = cardTarget.sexe === "M" ? "Lahy / M" : "Vavy / F";
+    $("card-date").textContent = cardTarget.dateFr;
+    $("card-lieu").textContent = cardTarget.lieu;
+    $("card-nationalite").textContent = cardTarget.nationalite;
+    $("card-profession").textContent = cardTarget.profession;
+    $("scan-ref").textContent = "Réf : " + cardTarget.ref;
+    $("scan-sign").textContent = pick(CARD_SIGN_NAMES);
+    Array.prototype.forEach.call(document.querySelectorAll(".scan-value"), function(el){
+      el.style.fontFamily = "'" + selectedCardFont + "', cursive";
+    });
   }
 
   $("btn-start").addEventListener("click", function(){
@@ -342,10 +473,9 @@
     selectedPassage = pick(PASSAGES);
     selectedFont = pick(HANDWRITING_FONTS);
     selectedInk = pick(INK_COLORS);
-    ficheTarget = newFicheTarget();
-    $("fiche-dossier").textContent = ficheTarget.dossier;
-    $("fiche-tel").textContent = ficheTarget.tel;
-    $("fiche-date").textContent = ficheTarget.dateFr;
+    selectedCardFont = pick(HANDWRITING_FONTS);
+    cardTarget = newCardTarget();
+    renderCard();
     showStep(1);
   });
 
@@ -441,20 +571,28 @@
     return { wpm: netWpm, accuracy: accuracy, errors: errors };
   }
 
+  var CARD_FIELD_IDS = ["in-nom-c","in-postnom-c","in-prenom-c","in-sexe-c","in-date-c","in-lieu-c","in-nationalite-c","in-profession-c"];
   function checkSaisieValid(){
-    var ok = $("in-dossier").value.trim().length > 0 && $("in-tel-saisie").value.trim().length > 0 && $("in-date-saisie").value.trim().length > 0;
+    var ok = CARD_FIELD_IDS.every(function(id){ return $(id).value.trim().length > 0; });
     $("btn-next-saisie").disabled = !ok;
   }
-  ["in-dossier","in-tel-saisie","in-date-saisie"].forEach(function(id){ $(id).addEventListener("input", checkSaisieValid); });
+  CARD_FIELD_IDS.forEach(function(id){ $(id).addEventListener("input", checkSaisieValid); $(id).addEventListener("change", checkSaisieValid); });
   $("btn-next-saisie").addEventListener("click", function(){ showStep(3); });
 
   function scoreDataEntry(){
-    var norm = function(s){ return (s||"").trim().toUpperCase(); };
-    var okDossier = norm($("in-dossier").value) === norm(ficheTarget.dossier);
-    var okTel = ($("in-tel-saisie").value||"").replace(/\s/g,"") === ficheTarget.telDigits;
-    var okDate = $("in-date-saisie").value === ficheTarget.dateIso;
-    var correct = [okDossier, okTel, okDate].filter(Boolean).length;
-    return Math.round(100 * correct / 3);
+    var eq = function(a,b){ return (a||"").trim() === (b||"").trim(); };
+    var checks = [
+      eq($("in-nom-c").value, cardTarget.nom),
+      eq($("in-postnom-c").value, cardTarget.postnom),
+      eq($("in-prenom-c").value, cardTarget.prenom),
+      $("in-sexe-c").value === cardTarget.sexe,
+      $("in-date-c").value === cardTarget.dateIso,
+      eq($("in-lieu-c").value, cardTarget.lieu),
+      eq($("in-nationalite-c").value, cardTarget.nationalite),
+      eq($("in-profession-c").value, cardTarget.profession)
+    ];
+    var correct = checks.filter(Boolean).length;
+    return Math.round(100 * correct / checks.length);
   }
 
   function renderQuiz(){
@@ -562,7 +700,8 @@
     quizAnswers = new Array(QUIZ.length).fill(null);
     $("in-nom").value = ""; $("in-prenom").value = ""; $("in-tel").value = "";
     $("in-typing").value = "";
-    $("in-dossier").value = ""; $("in-tel-saisie").value = ""; $("in-date-saisie").value = "";
+    CARD_FIELD_IDS.forEach(function(id){ $(id).value = ""; });
+    $("scan-card").classList.remove("zoomed");
     $("stat-time").textContent = "0:00"; $("stat-progress").textContent = "0%"; $("stat-chars").textContent = "0";
     $("btn-next-1").disabled = true; $("btn-next-saisie").disabled = true;
     renderQuiz(); updateQuizProgress(); checkIdentValid();
