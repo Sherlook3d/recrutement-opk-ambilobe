@@ -724,6 +724,21 @@
     ]);
   }
 
+  var lastSyncError = "";
+  function describeError(res, e){
+    if(e){
+      if(e.message === "timeout") return "délai dépassé (10s) — la requête n'a reçu aucune réponse";
+      return (e.name || "Erreur") + " : " + (e.message || String(e));
+    }
+    if(res && res.error){
+      var parts = [];
+      if(res.error.code) parts.push("code " + res.error.code);
+      if(res.error.message) parts.push(res.error.message);
+      return parts.join(" — ") || "erreur inconnue du serveur";
+    }
+    return "";
+  }
+
   var flushInProgress = false;
   async function flushQueue(){
     if(flushInProgress) return;
@@ -734,8 +749,8 @@
     for(var i=0;i<q.length;i++){
       try{
         var res = await insertWithTimeout(q[i], 10000);
-        if(res.error) remaining.push(q[i]);
-      }catch(e){ remaining.push(q[i]); }
+        if(res.error){ remaining.push(q[i]); lastSyncError = describeError(res, null); console.error("[OPK sync]", lastSyncError, res.error); }
+      }catch(e){ remaining.push(q[i]); lastSyncError = describeError(null, e); console.error("[OPK sync]", lastSyncError, e); }
     }
     writeQueue(remaining);
     flushInProgress = false;
@@ -753,7 +768,8 @@
     if(pending === 0){
       setSyncBanner("ok", "Formulaire bien envoyé — le test est terminé. Tu peux passer au candidat suivant.");
     } else {
-      setSyncBanner("pending", pending + " résultat(s) en attente d'envoi (connexion instable). L'envoi reprendra automatiquement — tu peux quand même passer au candidat suivant.");
+      var detail = lastSyncError ? " Détail technique : " + lastSyncError : "";
+      setSyncBanner("pending", pending + " résultat(s) en attente d'envoi. L'envoi reprendra automatiquement — tu peux quand même passer au candidat suivant." + detail);
     }
     $("btn-restart").disabled = false;
   }
@@ -764,9 +780,13 @@
     try{
       var res = await insertWithTimeout(record, 10000);
       if(res.error){
+        lastSyncError = describeError(res, null);
+        console.error("[OPK sync]", lastSyncError, res.error);
         var q = readQueue(); q.push(record); writeQueue(q);
       }
     }catch(e){
+      lastSyncError = describeError(null, e);
+      console.error("[OPK sync]", lastSyncError, e);
       var q2 = readQueue(); q2.push(record); writeQueue(q2);
     }
     updateSyncIndicator();
