@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classement — OPK Ambilobe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;600;700&display=swap">
+<style>
+  :root{
+    --surface:#f2f4f0; --surface-card:#ffffff; --surface-sunken:#e7ebe4;
+    --ink:#16211d; --ink-muted:#57685f; --ink-faint:#8a988f;
+    --accent:#0e7c86; --accent-strong:#085158; --accent-wash:#e2f1f0;
+    --line:#d8ddd4; --good:#2f8f4e; --good-wash:#e6f4e9;
+    --bad:#c1432c; --bad-wash:#fbeae6; --warn:#a9760f; --warn-wash:#f8eeda;
+    --shadow:0 1px 2px rgba(22,33,29,.06),0 8px 24px -12px rgba(22,33,29,.18);
+    --focus:0 0 0 3px rgba(14,124,134,.35);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --surface:#0f1512; --surface-card:#161e19; --surface-sunken:#1c2620;
+      --ink:#edf1ec; --ink-muted:#9db0a4; --ink-faint:#63776b;
+      --accent:#3ecdd6; --accent-strong:#7fe0e6; --accent-wash:#132a2a;
+      --line:#2a352e; --good:#57c47c; --good-wash:#12291b;
+      --bad:#e97b62; --bad-wash:#2e1712; --warn:#dcb35a; --warn-wash:#2c2312;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 28px -14px rgba(0,0,0,.6);
+      --focus:0 0 0 3px rgba(62,205,214,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --surface:#0f1512; --surface-card:#161e19; --surface-sunken:#1c2620;
+    --ink:#edf1ec; --ink-muted:#9db0a4; --ink-faint:#63776b;
+    --accent:#3ecdd6; --accent-strong:#7fe0e6; --accent-wash:#132a2a;
+    --line:#2a352e; --good:#57c47c; --good-wash:#12291b;
+    --bad:#e97b62; --bad-wash:#2e1712; --warn:#dcb35a; --warn-wash:#2c2312;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 28px -14px rgba(0,0,0,.6);
+    --focus:0 0 0 3px rgba(62,205,214,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--surface);color:var(--ink);font-family:"Public Sans",-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;min-height:100%;}
+  ::selection{background:var(--accent);color:#fff;}
+  :focus-visible{outline:none;box-shadow:var(--focus);border-radius:6px;}
+  .shell{max-width:920px;margin:0 auto;padding:28px 20px 60px;display:flex;flex-direction:column;gap:20px;}
+  .masthead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .masthead .brand{display:flex;flex-direction:column;gap:2px;}
+  .brand .eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+  .brand h1{margin:0;font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:clamp(28px,5vw,38px);letter-spacing:.01em;text-transform:uppercase;text-wrap:balance;line-height:.95;}
+  .admin-link{font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.04em;color:var(--ink-faint);background:none;border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer;white-space:nowrap;text-decoration:none;}
+  .admin-link:hover{color:var(--ink-muted);border-color:var(--ink-faint);}
+  .card{background:var(--surface-card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:28px;display:flex;flex-direction:column;gap:18px;}
+  @media (max-width:520px){ .card{padding:20px;border-radius:14px;} }
+  .card h2{margin:0;font-family:"Big Shoulders Display",sans-serif;font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.01em;}
+  .card p.lede{margin:0;color:var(--ink-muted);font-size:14.5px;line-height:1.5;max-width:60ch;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12.5px;font-weight:600;color:var(--ink-muted);}
+  .field input{font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface-sunken);border:1px solid var(--line);border-radius:10px;padding:11px 13px;width:100%;}
+  .actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:4px;}
+  .btn{font-family:"Public Sans",sans-serif;font-weight:700;font-size:14.5px;border-radius:10px;padding:12px 22px;border:1px solid transparent;cursor:pointer;transition:transform .08s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--accent);color:#04211f;}
+  .btn-primary:hover{background:var(--accent-strong);}
+  .btn-primary:disabled{background:var(--line);color:var(--ink-faint);cursor:not-allowed;}
+  .btn-ghost{background:none;border-color:var(--line);color:var(--ink-muted);}
+  .btn-ghost:hover{border-color:var(--ink-faint);color:var(--ink);}
+  .hint{font-size:12px;color:var(--ink-faint);font-family:"JetBrains Mono",monospace;}
+  .lock-card{max-width:360px;margin:80px auto;text-align:left;}
+  .lock-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-wash);color:var(--accent-strong);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .error-msg{font-size:13px;color:var(--bad);background:var(--bad-wash);border-radius:8px;padding:8px 11px;}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--good);flex-shrink:0;box-shadow:0 0 0 3px var(--good-wash);}
+  .board-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;}
+  table.board{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px;}
+  table.board th, table.board td{padding:10px 12px;text-align:left;white-space:nowrap;}
+  table.board thead th{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--surface-sunken);cursor:pointer;position:sticky;top:0;user-select:none;}
+  table.board thead th:hover{color:var(--ink);}
+  table.board tbody tr{border-top:1px solid var(--line);}
+  table.board tbody tr:hover{background:var(--surface-sunken);}
+  table.board tbody tr.is-new{animation:flashnew 2s ease-out;}
+  @keyframes flashnew{ from{background:var(--accent-wash);} to{background:transparent;} }
+  td.num, th.num{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}
+  .rank-pill{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;border-radius:999px;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;background:var(--surface-sunken);color:var(--ink-muted);}
+  .rank-pill.gold{background:var(--warn-wash);color:var(--warn);}
+  .score-pill{font-family:"JetBrains Mono",monospace;font-weight:700;font-variant-numeric:tabular-nums;}
+  .empty-board{text-align:center;padding:50px 20px;color:var(--ink-faint);font-size:14px;}
+  .formula{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink-faint);line-height:1.6;}
+  .admin-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  [hidden]{display:none!important;}
+  @media (prefers-reduced-motion:reduce){ .btn{transition:none;} table.board tbody tr.is-new{animation:none;} }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="card lock-card" id="lock-card">
+    <div class="lock-icon">&#128274;</div>
+    <h2>Classement — accès restreint</h2>
+    <p class="lede">Connecte-toi avec le compte admin pour consulter le classement des candidats.</p>
+    <div class="field"><label for="in-email">E-mail</label><input type="email" id="in-email" autocomplete="username"></div>
+    <div class="field"><label for="in-pass">Mot de passe</label><input type="password" id="in-pass" autocomplete="current-password"></div>
+    <div class="error-msg" id="lock-error" hidden></div>
+    <div class="actions">
+      <a class="admin-link" href="index.html">&larr; Page candidat</a>
+      <button class="btn btn-primary" id="btn-login" type="button">Se connecter</button>
+    </div>
+  </div>
+
+  <div id="board" hidden>
+    <div class="masthead">
+      <div class="brand">
+        <span class="eyebrow">Test OPK · résultats</span>
+        <h1>Classement</h1>
+      </div>
+      <div class="admin-actions">
+        <a class="admin-link" href="index.html">Page candidat</a>
+        <button class="admin-link" id="btn-logout" type="button">Se déconnecter</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="board-head">
+        <p class="lede" style="margin:0;display:flex;align-items:center;gap:8px;">
+          <span class="live-dot"></span>En direct — rang automatique par score global. Clique un en-tête de colonne pour trier autrement.
+        </p>
+        <div class="admin-actions">
+          <button class="btn btn-ghost" id="btn-reset-all" type="button">Réinitialiser</button>
+        </div>
+      </div>
+
+      <div id="board-empty" class="empty-board" hidden>Aucun candidat enregistré pour l'instant.</div>
+
+      <div class="table-wrap" id="board-table-wrap" hidden>
+        <table class="board" id="board-table">
+          <thead>
+            <tr>
+              <th data-key="rank" class="num">Rang</th>
+              <th data-key="nom">Candidat</th>
+              <th data-key="telephone">Téléphone</th>
+              <th data-key="poste">Poste</th>
+              <th data-key="wpm" class="num">Mpm</th>
+              <th data-key="accuracy" class="num">Précision</th>
+              <th data-key="errors" class="num">Erreurs</th>
+              <th data-key="data_entry" class="num">Saisie</th>
+              <th data-key="quiz" class="num">Bureautique</th>
+              <th data-key="score" class="num">Score global</th>
+              <th data-key="created_at">Date</th>
+            </tr>
+          </thead>
+          <tbody id="board-tbody"></tbody>
+        </table>
+      </div>
+
+      <p class="formula">Score global = 30% précision orthographique + 20% vitesse de frappe (référence 35 mots/min) + 30% précision de saisie + 20% quiz bureautique.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var SUPABASE_URL = "https://bflspzngwctaochwwjpt.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_YfwdBcV6NMnpz3AsJtEZ3w_GqiD2c1N";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function $(id){ return document.getElementById(id); }
+
+  var rows = [];
+  var sortState = { key:"score", dir:"desc" };
+  var freshIds = {};
+
+  function showLock(msg){
+    $("lock-card").hidden = false;
+    $("board").hidden = true;
+    if(msg){ $("lock-error").textContent = msg; $("lock-error").hidden = false; }
+    else { $("lock-error").hidden = true; }
+  }
+  function showBoard(){
+    $("lock-card").hidden = true;
+    $("board").hidden = false;
+  }
+
+  $("btn-login").addEventListener("click", async function(){
+    var email = $("in-email").value.trim();
+    var password = $("in-pass").value;
+    if(!email || !password){ showLock("Renseigne l'e-mail et le mot de passe."); return; }
+    var res = await sb.auth.signInWithPassword({ email: email, password: password });
+    if(res.error){ showLock("Connexion refusée : " + res.error.message); return; }
+    onAuthed();
+  });
+  $("in-pass").addEventListener("keydown", function(e){ if(e.key === "Enter") $("btn-login").click(); });
+
+  $("btn-logout").addEventListener("click", async function(){
+    await sb.auth.signOut();
+    showLock();
+  });
+
+  $("btn-reset-all").addEventListener("click", async function(){
+    if(!confirm("Supprimer tous les résultats enregistrés ? Cette action est irréversible.")) return;
+    await sb.from("candidats").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await loadRows();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("#board-table thead th"), function(th){
+    th.addEventListener("click", function(){
+      var key = th.getAttribute("data-key");
+      if(sortState.key === key){ sortState.dir = sortState.dir === "desc" ? "asc" : "desc"; }
+      else { sortState.key = key; sortState.dir = (key === "nom" || key === "telephone" || key === "poste" || key === "created_at") ? "asc" : "desc"; }
+      renderBoard();
+    });
+  });
+
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function renderBoard(){
+    if(rows.length === 0){
+      $("board-empty").hidden = false;
+      $("board-table-wrap").hidden = true;
+      return;
+    }
+    $("board-empty").hidden = true;
+    $("board-table-wrap").hidden = false;
+
+    var rankedByScore = rows.slice().sort(function(a,b){ return b.score - a.score; });
+    var rankOf = {};
+    rankedByScore.forEach(function(r, i){ rankOf[r.id] = i+1; });
+
+    var key = sortState.key, dir = sortState.dir === "asc" ? 1 : -1;
+    var list = rows.slice().sort(function(a,b){
+      var av, bv;
+      if(key === "rank"){ av = rankOf[a.id]; bv = rankOf[b.id]; }
+      else if(key === "nom"){ av = (a.nom+a.prenom).toLowerCase(); bv=(b.nom+b.prenom).toLowerCase(); }
+      else { av = a[key]; bv = b[key]; }
+      if(av == null) av = "";
+      if(bv == null) bv = "";
+      if(av < bv) return -1*dir;
+      if(av > bv) return 1*dir;
+      return 0;
+    });
+
+    var tbody = $("board-tbody");
+    tbody.innerHTML = "";
+    list.forEach(function(r){
+      var tr = document.createElement("tr");
+      if(freshIds[r.id]) tr.className = "is-new";
+      var rank = rankOf[r.id];
+      var d = new Date(r.created_at);
+      var dateStr = d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit"});
+      tr.innerHTML =
+        '<td class="num"><span class="rank-pill' + (rank===1?' gold':'') + '">' + rank + '</span></td>' +
+        '<td>' + escapeHtml(r.nom + " " + r.prenom) + '</td>' +
+        '<td class="num">' + escapeHtml(r.telephone) + '</td>' +
+        '<td>' + escapeHtml(r.poste) + '</td>' +
+        '<td class="num">' + r.wpm + '</td>' +
+        '<td class="num">' + r.accuracy + '%</td>' +
+        '<td class="num">' + r.errors + '</td>' +
+        '<td class="num">' + r.data_entry + '%</td>' +
+        '<td class="num">' + r.quiz + '%</td>' +
+        '<td class="num"><span class="score-pill">' + r.score + '</span></td>' +
+        '<td>' + dateStr + '</td>';
+      tbody.appendChild(tr);
+    });
+    freshIds = {};
+  }
+
+  async function loadRows(){
+    var res = await sb.from("candidats").select("*").order("score", { ascending:false });
+    if(!res.error){ rows = res.data || []; renderBoard(); }
+  }
+
+  var channel = null;
+  function subscribeRealtime(){
+    if(channel) return;
+    channel = sb.channel("candidats-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "candidats" }, function(payload){
+        rows.push(payload.new);
+        freshIds[payload.new.id] = true;
+        renderBoard();
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "candidats" }, function(payload){
+        rows = rows.filter(function(r){ return r.id !== payload.old.id; });
+        renderBoard();
+      })
+      .subscribe();
+  }
+
+  async function onAuthed(){
+    showBoard();
+    await loadRows();
+    subscribeRealtime();
+  }
+
+  sb.auth.getSession().then(function(res){
+    if(res.data && res.data.session){ onAuthed(); }
+    else { showLock(); }
+  });
+})();
+</script>
+</body>
+</html>
