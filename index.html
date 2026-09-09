@@ -152,10 +152,14 @@
   .btn-ghost:hover{border-color:var(--ink-faint);color:var(--ink);}
   .hint{font-size:13px;color:var(--ink-faint);font-family:"JetBrains Mono",monospace;}
   .done-mark{width:60px;height:60px;border-radius:50%;background:var(--good-wash);color:var(--good);display:flex;align-items:center;justify-content:center;font-size:30px;}
-  .sync-note{font-size:13px;color:var(--ink-faint);font-family:"JetBrains Mono",monospace;display:flex;align-items:center;gap:8px;}
-  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex-shrink:0;}
-  .sync-dot.ok{background:var(--good);}
-  .sync-dot.pending{background:var(--warn);}
+  .sync-banner{
+    display:flex;align-items:center;gap:12px;border-radius:12px;padding:16px 18px;
+    font-size:14.5px;font-weight:600;line-height:1.5;
+    background:var(--surface-sunken);color:var(--ink-muted);
+  }
+  .sync-banner-icon{font-size:20px;flex-shrink:0;}
+  .sync-banner.ok{background:var(--good-wash);color:var(--good);}
+  .sync-banner.pending{background:var(--warn-wash);color:var(--warn);}
   .lock-shell{max-width:420px;margin:0 auto;padding:56px 24px;display:flex;flex-direction:column;gap:20px;}
   .lock-brand{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;margin-bottom:4px;}
   .lock-brand .brand-mark{width:56px;height:56px;}
@@ -226,7 +230,6 @@
           <span class="lbl">Chrono</span>
           <span class="val" id="global-timer-val">0:00</span>
         </div>
-        <a class="admin-link" href="admin.html">Classement &rarr;</a>
       </div>
     </div>
 
@@ -366,12 +369,15 @@
       <div class="done-mark">&#10003;</div>
       <div>
         <h2>Test terminé</h2>
-        <p class="lede">Merci <span id="done-name"></span>, tes réponses ont été enregistrées. L'équipe OPK reviendra vers toi après analyse des résultats.</p>
+        <p class="lede">Merci <span id="done-name"></span>, tes réponses ont été enregistrées.</p>
       </div>
-      <div class="sync-note"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Envoi en cours…</span></div>
+      <div class="sync-banner" id="sync-banner">
+        <span class="sync-banner-icon" id="sync-banner-icon">&#8987;</span>
+        <span id="sync-banner-text">Envoi des résultats en cours…</span>
+      </div>
       <div class="actions">
         <span class="hint">Étape 5 / 5</span>
-        <button class="btn btn-ghost" id="btn-restart" type="button">Candidat suivant</button>
+        <button class="btn btn-primary" id="btn-restart" type="button" disabled>Candidat suivant &rarr;</button>
       </div>
     </section>
 </div>
@@ -721,17 +727,21 @@
     writeQueue(remaining);
     updateSyncIndicator();
   }
+  function setSyncBanner(state, text){
+    var banner = $("sync-banner"), icon = $("sync-banner-icon"), textEl = $("sync-banner-text");
+    if(!banner) return;
+    banner.className = "sync-banner" + (state ? " " + state : "");
+    icon.textContent = state === "ok" ? "✅" : state === "pending" ? "⏳" : "⏳";
+    textEl.textContent = text;
+  }
   function updateSyncIndicator(){
-    var dot = $("sync-dot"), text = $("sync-text");
-    if(!dot) return;
     var pending = readQueue().length;
     if(pending === 0){
-      dot.className = "sync-dot ok";
-      text.textContent = "Résultats envoyés.";
+      setSyncBanner("ok", "Formulaire bien envoyé — le test est terminé. Tu peux passer au candidat suivant.");
     } else {
-      dot.className = "sync-dot pending";
-      text.textContent = pending + " résultat(s) en attente d'envoi (reprise automatique dès que la connexion revient).";
+      setSyncBanner("pending", pending + " résultat(s) en attente d'envoi (connexion instable). L'envoi reprendra automatiquement — tu peux quand même passer au candidat suivant.");
     }
+    $("btn-restart").disabled = false;
   }
   window.addEventListener("online", flushQueue);
   setInterval(flushQueue, 8000);
@@ -760,6 +770,8 @@
       poste: getPosteLabel()
     };
     $("done-name").textContent = candidate.prenom || "";
+    $("btn-restart").disabled = true;
+    setSyncBanner("", "Envoi des résultats en cours…");
     stopGlobalTimer();
     showStep(4);
     submitRecord(record);

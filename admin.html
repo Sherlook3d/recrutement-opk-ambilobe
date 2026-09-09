@@ -205,6 +205,7 @@
 
   $("btn-logout").addEventListener("click", async function(){
     await sb.auth.signOut();
+    stopPolling();
     showLock();
   });
 
@@ -301,10 +302,23 @@
       .subscribe();
   }
 
+  // Poll as a safety net alongside the realtime subscription: guarantees the
+  // board reflects the database within a few seconds even if a websocket
+  // push is missed (flaky network, tab was backgrounded, etc).
+  var pollInterval = null;
+  function startPolling(){
+    if(pollInterval) return;
+    pollInterval = setInterval(loadRows, 4000);
+  }
+  function stopPolling(){
+    if(pollInterval){ clearInterval(pollInterval); pollInterval = null; }
+  }
+
   async function onAuthed(){
     showBoard();
     await loadRows();
     subscribeRealtime();
+    startPolling();
   }
 
   sb.auth.getSession().then(function(res){
