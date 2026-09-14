@@ -144,7 +144,6 @@
             <col style="width:64px">
             <col style="width:180px">
             <col style="width:130px">
-            <col style="width:110px">
             <col style="width:70px">
             <col style="width:90px">
             <col style="width:80px">
@@ -159,7 +158,6 @@
               <th data-key="rank" class="num">Rang</th>
               <th data-key="nom">Candidat</th>
               <th data-key="telephone">Téléphone</th>
-              <th data-key="poste">Poste</th>
               <th data-key="wpm" class="num">Mpm</th>
               <th data-key="accuracy" class="num">Précision</th>
               <th data-key="errors" class="num">Erreurs</th>
@@ -280,12 +278,12 @@
       var key = th.getAttribute("data-key");
       if(!key || editingId) return;
       if(sortState.key === key){ sortState.dir = sortState.dir === "desc" ? "asc" : "desc"; }
-      else { sortState.key = key; sortState.dir = (key === "nom" || key === "telephone" || key === "poste" || key === "created_at") ? "asc" : "desc"; }
+      else { sortState.key = key; sortState.dir = (key === "nom" || key === "telephone" || key === "created_at") ? "asc" : "desc"; }
       renderBoard();
     });
   });
 
-  var COL_STORAGE_KEY = "opk-admin-col-widths";
+  var COL_STORAGE_KEY = "opk-admin-col-widths-v2";
   var colEls = document.querySelectorAll("#board-table colgroup col");
   var headEls = document.querySelectorAll("#board-table thead th");
 
@@ -388,7 +386,6 @@
         "Rang": rank,
         "Candidat": r.nom + " " + r.prenom,
         "Téléphone": r.telephone,
-        "Poste": r.poste,
         "Mpm": r.wpm,
         "Précision (%)": r.accuracy,
         "Erreurs": r.errors,
@@ -406,7 +403,6 @@
             '<input type="text" data-field="prenom" value="' + escapeHtml(r.prenom) + '" placeholder="Prénom">' +
           '</div></td>' +
           '<td class="editing"><input type="text" data-field="telephone" value="' + escapeHtml(r.telephone) + '"></td>' +
-          '<td class="editing"><input type="text" data-field="poste" value="' + escapeHtml(r.poste) + '"></td>' +
           '<td class="num editing"><input class="num" type="number" data-field="wpm" value="' + r.wpm + '"></td>' +
           '<td class="num editing"><input class="num" type="number" data-field="accuracy" value="' + r.accuracy + '"></td>' +
           '<td class="num editing"><input class="num" type="number" data-field="errors" value="' + r.errors + '"></td>' +
@@ -423,7 +419,6 @@
           '<td class="num"><span class="rank-pill' + (rank===1?' gold':'') + '">' + rank + '</span></td>' +
           '<td>' + escapeHtml(r.nom + " " + r.prenom) + '</td>' +
           '<td class="num">' + escapeHtml(r.telephone) + '</td>' +
-          '<td>' + escapeHtml(r.poste) + '</td>' +
           '<td class="num">' + r.wpm + '</td>' +
           '<td class="num">' + r.accuracy + '%</td>' +
           '<td class="num">' + r.errors + '</td>' +
@@ -529,7 +524,7 @@
   }
 
   async function saveRow(tr, id){
-    var textFields = ["nom", "prenom", "telephone", "poste"];
+    var textFields = ["nom", "prenom", "telephone"];
     var numFields = ["wpm", "accuracy", "errors", "data_entry", "quiz", "score"];
     var patch = {};
     for(var i=0;i<textFields.length;i++){
