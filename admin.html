@@ -55,9 +55,11 @@
   .live-dot{width:9px;height:9px;border-radius:50%;background:var(--good);flex-shrink:0;box-shadow:0 0 0 3px var(--good-wash);}
   .board-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
   .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;}
-  table.board{border-collapse:collapse;width:100%;min-width:860px;font-size:14.5px;}
-  table.board th, table.board td{padding:13px 14px;text-align:left;white-space:nowrap;}
+  table.board{border-collapse:collapse;width:100%;min-width:1100px;font-size:14.5px;table-layout:fixed;}
+  table.board th, table.board td{padding:13px 14px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   table.board thead th{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--surface-sunken);cursor:pointer;position:sticky;top:0;user-select:none;}
+  .col-resize-handle{position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:3;}
+  .col-resize-handle:hover, .col-resize-handle.is-dragging{background:var(--accent);opacity:.35;}
   table.board thead th:hover{color:var(--ink);}
   table.board tbody tr{border-top:1px solid var(--line);}
   table.board tbody tr:hover{background:var(--surface-sunken);}
@@ -136,6 +138,20 @@
 
       <div class="table-wrap" id="board-table-wrap" hidden>
         <table class="board hide-actions" id="board-table">
+          <colgroup>
+            <col style="width:64px">
+            <col style="width:180px">
+            <col style="width:130px">
+            <col style="width:110px">
+            <col style="width:70px">
+            <col style="width:90px">
+            <col style="width:80px">
+            <col style="width:90px">
+            <col style="width:110px">
+            <col style="width:110px">
+            <col style="width:140px">
+            <col style="width:170px">
+          </colgroup>
           <thead>
             <tr>
               <th data-key="rank" class="num">Rang</th>
@@ -256,7 +272,8 @@
   });
 
   Array.prototype.forEach.call(document.querySelectorAll("#board-table thead th"), function(th){
-    th.addEventListener("click", function(){
+    th.addEventListener("click", function(e){
+      if(e.target.classList.contains("col-resize-handle")) return;
       var key = th.getAttribute("data-key");
       if(!key || editingId) return;
       if(sortState.key === key){ sortState.dir = sortState.dir === "desc" ? "asc" : "desc"; }
@@ -264,6 +281,51 @@
       renderBoard();
     });
   });
+
+  var COL_STORAGE_KEY = "opk-admin-col-widths";
+  var colEls = document.querySelectorAll("#board-table colgroup col");
+  var headEls = document.querySelectorAll("#board-table thead th");
+
+  function loadColWidths(){
+    var saved;
+    try{ saved = JSON.parse(localStorage.getItem(COL_STORAGE_KEY) || "[]"); }catch(e){ saved = []; }
+    if(!Array.isArray(saved)) return;
+    saved.forEach(function(w, i){
+      if(w && colEls[i]) colEls[i].style.width = w + "px";
+    });
+  }
+  function saveColWidths(){
+    var widths = Array.prototype.map.call(colEls, function(col){ return col.getBoundingClientRect().width; });
+    try{ localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(widths)); }catch(e){}
+  }
+
+  Array.prototype.forEach.call(headEls, function(th, idx){
+    var handle = document.createElement("div");
+    handle.className = "col-resize-handle";
+    th.appendChild(handle);
+    handle.addEventListener("mousedown", function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      var col = colEls[idx];
+      var startX = e.clientX;
+      var startWidth = col.getBoundingClientRect().width;
+      handle.classList.add("is-dragging");
+      function onMove(ev){
+        var w = Math.max(44, startWidth + (ev.clientX - startX));
+        col.style.width = w + "px";
+      }
+      function onUp(){
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        handle.classList.remove("is-dragging");
+        saveColWidths();
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+  });
+
+  loadColWidths();
 
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
