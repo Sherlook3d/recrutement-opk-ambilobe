@@ -78,6 +78,8 @@
   .btn-sm.btn-primary:hover{background:var(--accent-strong);}
   .btn-sm.btn-ghost{background:none;border-color:var(--line);color:var(--ink-muted);}
   .btn-sm.btn-ghost:hover{border-color:var(--ink-faint);color:var(--ink);}
+  .btn-sm.btn-danger{background:none;border-color:var(--bad);color:var(--bad);}
+  .btn-sm.btn-danger:hover{background:var(--bad-wash);}
   .row-actions{display:flex;gap:6px;}
   td.editing input{font-family:inherit;font-size:13.5px;color:var(--ink);background:var(--surface-sunken);border:1px solid var(--line);border-radius:7px;padding:6px 8px;width:100%;box-sizing:border-box;}
   td.editing input.num{width:64px;font-family:"JetBrains Mono",monospace;}
@@ -333,6 +335,11 @@
     });
   }
 
+  function toDatetimeLocal(d){
+    var pad = function(n){ return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
   function renderBoard(){
     exportRows = [];
     if(rows.length === 0){
@@ -399,7 +406,7 @@
           '<td class="num editing"><input class="num" type="number" data-field="data_entry" value="' + r.data_entry + '"></td>' +
           '<td class="num editing"><input class="num" type="number" data-field="quiz" value="' + r.quiz + '"></td>' +
           '<td class="num editing"><input class="num" type="number" data-field="score" value="' + r.score + '"></td>' +
-          '<td>' + dateStr + '</td>' +
+          '<td class="editing"><input type="datetime-local" data-field="created_at" value="' + toDatetimeLocal(d) + '"></td>' +
           '<td class="action-col"><div class="row-actions">' +
             '<button class="btn-sm btn-primary" data-action="save" type="button">Enregistrer</button>' +
             '<button class="btn-sm btn-ghost" data-action="cancel" type="button">Annuler</button>' +
@@ -419,6 +426,7 @@
           '<td>' + dateStr + '</td>' +
           '<td class="action-col"><div class="row-actions">' +
             '<button class="btn-sm btn-ghost" data-action="edit" type="button">Modifier</button>' +
+            '<button class="btn-sm btn-danger" data-action="delete" type="button">Supprimer</button>' +
           '</div></td>';
       }
       tbody.appendChild(tr);
@@ -440,8 +448,27 @@
       renderBoard();
     } else if(action === "save"){
       saveRow(tr, id);
+    } else if(action === "delete"){
+      deleteRow(tr, id);
     }
   });
+
+  async function deleteRow(tr, id){
+    var row = rows.find(function(r){ return r.id === id; });
+    var label = row ? (row.nom + " " + row.prenom) : "cet enregistrement";
+    if(!confirm("Supprimer l'enregistrement de " + label + " ? Cette action est irréversible.")) return;
+    var btn = tr.querySelector('button[data-action="delete"]');
+    if(btn){ btn.disabled = true; btn.textContent = "..."; }
+    var res = await sb.from("candidats").delete().eq("id", id);
+    if(res.error){
+      alert("Échec de la suppression : " + res.error.message);
+      if(btn){ btn.disabled = false; btn.textContent = "Supprimer"; }
+      return;
+    }
+    rows = rows.filter(function(r){ return r.id !== id; });
+    if(editingId === id) editingId = null;
+    renderBoard();
+  }
 
   async function saveRow(tr, id){
     var textFields = ["nom", "prenom", "telephone", "poste"];
@@ -460,6 +487,10 @@
       if(isNaN(val) || val < 0){ alert("Valeur invalide pour le champ \"" + nf + "\"."); return; }
       patch[nf] = val;
     }
+    var dateInput = tr.querySelector('input[data-field="created_at"]');
+    var dt = new Date(dateInput.value);
+    if(!dateInput.value || isNaN(dt.getTime())){ alert("Date du test invalide."); return; }
+    patch.created_at = dt.toISOString();
     var saveBtn = tr.querySelector('button[data-action="save"]');
     saveBtn.disabled = true;
     saveBtn.textContent = "...";
