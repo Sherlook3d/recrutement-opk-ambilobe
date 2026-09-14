@@ -197,6 +197,7 @@
   var sortState = { key:"score", dir:"desc" };
   var freshIds = {};
   var editingId = null;
+  var editBaseline = {};
   var exportRows = [];
   var unlocked = false;
   var secretClicks = [];
@@ -442,21 +443,48 @@
 
   $("board-tbody").addEventListener("input", function(e){
     var field = e.target.getAttribute("data-field");
-    if(["wpm", "accuracy", "data_entry", "quiz"].indexOf(field) === -1) return;
     var tr = e.target.closest("tr[data-id]");
     if(!tr) return;
+    var id = tr.getAttribute("data-id");
     var wpmInput = tr.querySelector('input[data-field="wpm"]');
     var accInput = tr.querySelector('input[data-field="accuracy"]');
     var deInput = tr.querySelector('input[data-field="data_entry"]');
     var quizInput = tr.querySelector('input[data-field="quiz"]');
     var scoreInput = tr.querySelector('input[data-field="score"]');
     if(!wpmInput || !accInput || !deInput || !quizInput || !scoreInput) return;
-    scoreInput.value = computeGlobalScore(
-      parseFloat(wpmInput.value) || 0,
-      parseFloat(accInput.value) || 0,
-      parseFloat(deInput.value) || 0,
-      parseFloat(quizInput.value) || 0
-    );
+
+    if(["wpm", "accuracy", "data_entry", "quiz"].indexOf(field) !== -1){
+      var wpm = parseFloat(wpmInput.value) || 0;
+      var acc = parseFloat(accInput.value) || 0;
+      var de = parseFloat(deInput.value) || 0;
+      var quiz = parseFloat(quizInput.value) || 0;
+      var newScore = computeGlobalScore(wpm, acc, de, quiz);
+      scoreInput.value = newScore;
+      editBaseline[id] = { wpm: wpm, accuracy: acc, data_entry: de, quiz: quiz, score: newScore };
+    } else if(field === "score"){
+      var typed = parseFloat(scoreInput.value);
+      if(isNaN(typed)) return;
+      typed = clamp(typed, 0, 100);
+      var base = editBaseline[id];
+      if(!base) return;
+      var nw, na, nd, nq;
+      if(base.score > 0){
+        var ratio = typed / base.score;
+        nw = Math.max(0, Math.round(base.wpm * ratio));
+        na = clamp(Math.round(base.accuracy * ratio), 0, 100);
+        nd = clamp(Math.round(base.data_entry * ratio), 0, 100);
+        nq = clamp(Math.round(base.quiz * ratio), 0, 100);
+      } else {
+        // Score de depart a 0 : on ne peut pas mettre a l'echelle un ratio a partir
+        // de zero, donc on repartit uniformement (les poids de la formule somment a 1).
+        na = nd = nq = Math.round(typed);
+        nw = Math.round(typed * 35 / 100);
+      }
+      wpmInput.value = nw;
+      accInput.value = na;
+      deInput.value = nd;
+      quizInput.value = nq;
+    }
   });
 
   $("board-tbody").addEventListener("click", function(e){
@@ -467,9 +495,14 @@
     var action = btn.getAttribute("data-action");
     if(action === "edit"){
       editingId = id;
+      var row = rows.find(function(x){ return x.id === id; });
+      if(row){
+        editBaseline[id] = { wpm: row.wpm, accuracy: row.accuracy, data_entry: row.data_entry, quiz: row.quiz, score: row.score };
+      }
       renderBoard();
     } else if(action === "cancel"){
       editingId = null;
+      delete editBaseline[id];
       renderBoard();
     } else if(action === "save"){
       saveRow(tr, id);
@@ -491,7 +524,7 @@
       return;
     }
     rows = rows.filter(function(r){ return r.id !== id; });
-    if(editingId === id) editingId = null;
+    if(editingId === id){ editingId = null; delete editBaseline[id]; }
     renderBoard();
   }
 
@@ -531,6 +564,7 @@
       if(idx !== -1) rows[idx] = res.data[0];
     }
     editingId = null;
+    delete editBaseline[id];
     renderBoard();
   }
 
