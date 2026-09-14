@@ -335,6 +335,12 @@
     });
   }
 
+  function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+
+  function computeGlobalScore(wpm, accuracy, dataEntry, quiz){
+    return clamp(Math.round(0.30*accuracy + 0.35*dataEntry + 0.25*clamp(100*wpm/35, 0, 100) + 0.10*quiz), 0, 100);
+  }
+
   function toDatetimeLocal(d){
     var pad = function(n){ return String(n).padStart(2, "0"); };
     return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
@@ -433,6 +439,25 @@
     });
     freshIds = {};
   }
+
+  $("board-tbody").addEventListener("input", function(e){
+    var field = e.target.getAttribute("data-field");
+    if(["wpm", "accuracy", "data_entry", "quiz"].indexOf(field) === -1) return;
+    var tr = e.target.closest("tr[data-id]");
+    if(!tr) return;
+    var wpmInput = tr.querySelector('input[data-field="wpm"]');
+    var accInput = tr.querySelector('input[data-field="accuracy"]');
+    var deInput = tr.querySelector('input[data-field="data_entry"]');
+    var quizInput = tr.querySelector('input[data-field="quiz"]');
+    var scoreInput = tr.querySelector('input[data-field="score"]');
+    if(!wpmInput || !accInput || !deInput || !quizInput || !scoreInput) return;
+    scoreInput.value = computeGlobalScore(
+      parseFloat(wpmInput.value) || 0,
+      parseFloat(accInput.value) || 0,
+      parseFloat(deInput.value) || 0,
+      parseFloat(quizInput.value) || 0
+    );
+  });
 
   $("board-tbody").addEventListener("click", function(e){
     var btn = e.target.closest("button[data-action]");
