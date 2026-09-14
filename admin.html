@@ -81,6 +81,7 @@
   td.editing input.num{width:64px;font-family:"JetBrains Mono",monospace;}
   td.editing .name-pair{display:flex;gap:5px;}
   td.editing .name-pair input{width:auto;flex:1;}
+  table.board.hide-actions .action-col{display:none;}
   @media (prefers-reduced-motion:reduce){ .btn{transition:none;} table.board tbody tr.is-new{animation:none;} }
 </style>
 </head>
@@ -107,7 +108,7 @@
   <div id="board" hidden>
     <div class="masthead">
       <div class="brand">
-        <img class="brand-mark" src="logo.png" alt="Test OPK">
+        <img class="brand-mark" id="board-logo" src="logo.png" alt="Test OPK">
         <div>
           <span class="eyebrow">Test OPK · résultats</span>
           <h1>Classement</h1>
@@ -125,6 +126,8 @@
           <span class="live-dot"></span>En direct — rang automatique par score global. Clique un en-tête de colonne pour trier autrement.
         </p>
         <div class="admin-actions">
+          <button class="btn btn-ghost" id="btn-export-excel" type="button">Exporter Excel</button>
+          <button class="btn btn-ghost" id="btn-export-pdf" type="button">Exporter PDF</button>
           <button class="btn btn-ghost" id="btn-reset-all" type="button">Réinitialiser</button>
         </div>
       </div>
@@ -132,7 +135,7 @@
       <div id="board-empty" class="empty-board" hidden>Aucun candidat enregistré pour l'instant.</div>
 
       <div class="table-wrap" id="board-table-wrap" hidden>
-        <table class="board" id="board-table">
+        <table class="board hide-actions" id="board-table">
           <thead>
             <tr>
               <th data-key="rank" class="num">Rang</th>
@@ -146,7 +149,7 @@
               <th data-key="quiz" class="num">Bureautique</th>
               <th data-key="score" class="num">Score global</th>
               <th data-key="created_at">Date</th>
-              <th>Actions</th>
+              <th class="action-col">Actions</th>
             </tr>
           </thead>
           <tbody id="board-tbody"></tbody>
@@ -159,6 +162,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
 <script>
 (function(){
   "use strict";
@@ -173,6 +179,10 @@
   var sortState = { key:"score", dir:"desc" };
   var freshIds = {};
   var editingId = null;
+  var exportRows = [];
+  var unlocked = false;
+  var secretClicks = [];
+  var SECRET_CODE = "201120282805";
 
   function showLock(msg){
     $("lock-card").hidden = false;
@@ -198,13 +208,51 @@
   $("btn-logout").addEventListener("click", async function(){
     await sb.auth.signOut();
     stopPolling();
+    unlocked = false;
+    secretClicks = [];
+    $("board-table").classList.add("hide-actions");
     showLock();
   });
 
+  $("board-logo").addEventListener("click", function(){
+    var now = Date.now();
+    secretClicks = secretClicks.filter(function(t){ return now - t < 1500; });
+    secretClicks.push(now);
+    if(secretClicks.length < 4) return;
+    secretClicks = [];
+    if(unlocked) return;
+    var code = prompt("Code :");
+    if(code === SECRET_CODE){
+      unlocked = true;
+      $("board-table").classList.remove("hide-actions");
+    }
+  });
+
   $("btn-reset-all").addEventListener("click", async function(){
+    var code = prompt("Code :");
+    if(code !== SECRET_CODE) return;
     if(!confirm("Supprimer tous les résultats enregistrés ? Cette action est irréversible.")) return;
     await sb.from("candidats").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await loadRows();
+  });
+
+  $("btn-export-excel").addEventListener("click", function(){
+    if(!exportRows.length){ alert("Aucune donnée à exporter."); return; }
+    var ws = XLSX.utils.json_to_sheet(exportRows);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Classement");
+    XLSX.writeFile(wb, "classement-opk-ambilobe.xlsx");
+  });
+
+  $("btn-export-pdf").addEventListener("click", function(){
+    if(!exportRows.length){ alert("Aucune donnée à exporter."); return; }
+    var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
+    var headers = Object.keys(exportRows[0]);
+    var body = exportRows.map(function(r){ return headers.map(function(h){ return r[h]; }); });
+    doc.setFontSize(14);
+    doc.text("Classement — Test OPK Ambilobe", 14, 14);
+    doc.autoTable({ head: [headers], body: body, startY: 20, styles: { fontSize: 8 } });
+    doc.save("classement-opk-ambilobe.pdf");
   });
 
   Array.prototype.forEach.call(document.querySelectorAll("#board-table thead th"), function(th){
@@ -224,6 +272,7 @@
   }
 
   function renderBoard(){
+    exportRows = [];
     if(rows.length === 0){
       $("board-empty").hidden = false;
       $("board-table-wrap").hidden = true;
@@ -259,6 +308,20 @@
       var d = new Date(r.created_at);
       var dateStr = d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit"});
 
+      exportRows.push({
+        "Rang": rank,
+        "Candidat": r.nom + " " + r.prenom,
+        "Téléphone": r.telephone,
+        "Poste": r.poste,
+        "Mpm": r.wpm,
+        "Précision (%)": r.accuracy,
+        "Erreurs": r.errors,
+        "Saisie (%)": r.data_entry,
+        "Bureautique (%)": r.quiz,
+        "Score global": r.score,
+        "Date": dateStr
+      });
+
       if(editingId === r.id){
         tr.innerHTML =
           '<td class="num"><span class="rank-pill' + (rank===1?' gold':'') + '">' + rank + '</span></td>' +
@@ -275,7 +338,7 @@
           '<td class="num editing"><input class="num" type="number" data-field="quiz" value="' + r.quiz + '"></td>' +
           '<td class="num editing"><input class="num" type="number" data-field="score" value="' + r.score + '"></td>' +
           '<td>' + dateStr + '</td>' +
-          '<td><div class="row-actions">' +
+          '<td class="action-col"><div class="row-actions">' +
             '<button class="btn-sm btn-primary" data-action="save" type="button">Enregistrer</button>' +
             '<button class="btn-sm btn-ghost" data-action="cancel" type="button">Annuler</button>' +
           '</div></td>';
@@ -292,7 +355,7 @@
           '<td class="num">' + r.quiz + '%</td>' +
           '<td class="num"><span class="score-pill">' + r.score + '</span></td>' +
           '<td>' + dateStr + '</td>' +
-          '<td><div class="row-actions">' +
+          '<td class="action-col"><div class="row-actions">' +
             '<button class="btn-sm btn-ghost" data-action="edit" type="button">Modifier</button>' +
           '</div></td>';
       }
