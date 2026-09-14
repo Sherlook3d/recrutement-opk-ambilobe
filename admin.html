@@ -71,6 +71,16 @@
   .formula{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink-faint);line-height:1.6;}
   .admin-actions{display:flex;gap:10px;flex-wrap:wrap;}
   [hidden]{display:none!important;}
+  .btn-sm{font-family:"Public Sans",sans-serif;font-weight:700;font-size:12.5px;border-radius:8px;padding:7px 12px;border:1px solid transparent;cursor:pointer;min-height:32px;white-space:nowrap;}
+  .btn-sm.btn-primary{background:var(--accent);color:#04211f;}
+  .btn-sm.btn-primary:hover{background:var(--accent-strong);}
+  .btn-sm.btn-ghost{background:none;border-color:var(--line);color:var(--ink-muted);}
+  .btn-sm.btn-ghost:hover{border-color:var(--ink-faint);color:var(--ink);}
+  .row-actions{display:flex;gap:6px;}
+  td.editing input{font-family:inherit;font-size:13.5px;color:var(--ink);background:var(--surface-sunken);border:1px solid var(--line);border-radius:7px;padding:6px 8px;width:100%;box-sizing:border-box;}
+  td.editing input.num{width:64px;font-family:"JetBrains Mono",monospace;}
+  td.editing .name-pair{display:flex;gap:5px;}
+  td.editing .name-pair input{width:auto;flex:1;}
   @media (prefers-reduced-motion:reduce){ .btn{transition:none;} table.board tbody tr.is-new{animation:none;} }
 </style>
 </head>
@@ -136,6 +146,7 @@
               <th data-key="quiz" class="num">Bureautique</th>
               <th data-key="score" class="num">Score global</th>
               <th data-key="created_at">Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="board-tbody"></tbody>
@@ -161,6 +172,7 @@
   var rows = [];
   var sortState = { key:"score", dir:"desc" };
   var freshIds = {};
+  var editingId = null;
 
   function showLock(msg){
     $("lock-card").hidden = false;
@@ -198,6 +210,7 @@
   Array.prototype.forEach.call(document.querySelectorAll("#board-table thead th"), function(th){
     th.addEventListener("click", function(){
       var key = th.getAttribute("data-key");
+      if(!key || editingId) return;
       if(sortState.key === key){ sortState.dir = sortState.dir === "desc" ? "asc" : "desc"; }
       else { sortState.key = key; sortState.dir = (key === "nom" || key === "telephone" || key === "poste" || key === "created_at") ? "asc" : "desc"; }
       renderBoard();
@@ -240,25 +253,104 @@
     tbody.innerHTML = "";
     list.forEach(function(r){
       var tr = document.createElement("tr");
+      tr.setAttribute("data-id", r.id);
       if(freshIds[r.id]) tr.className = "is-new";
       var rank = rankOf[r.id];
       var d = new Date(r.created_at);
       var dateStr = d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit"});
-      tr.innerHTML =
-        '<td class="num"><span class="rank-pill' + (rank===1?' gold':'') + '">' + rank + '</span></td>' +
-        '<td>' + escapeHtml(r.nom + " " + r.prenom) + '</td>' +
-        '<td class="num">' + escapeHtml(r.telephone) + '</td>' +
-        '<td>' + escapeHtml(r.poste) + '</td>' +
-        '<td class="num">' + r.wpm + '</td>' +
-        '<td class="num">' + r.accuracy + '%</td>' +
-        '<td class="num">' + r.errors + '</td>' +
-        '<td class="num">' + r.data_entry + '%</td>' +
-        '<td class="num">' + r.quiz + '%</td>' +
-        '<td class="num"><span class="score-pill">' + r.score + '</span></td>' +
-        '<td>' + dateStr + '</td>';
+
+      if(editingId === r.id){
+        tr.innerHTML =
+          '<td class="num"><span class="rank-pill' + (rank===1?' gold':'') + '">' + rank + '</span></td>' +
+          '<td class="editing"><div class="name-pair">' +
+            '<input type="text" data-field="nom" value="' + escapeHtml(r.nom) + '" placeholder="Nom">' +
+            '<input type="text" data-field="prenom" value="' + escapeHtml(r.prenom) + '" placeholder="Prénom">' +
+          '</div></td>' +
+          '<td class="editing"><input type="text" data-field="telephone" value="' + escapeHtml(r.telephone) + '"></td>' +
+          '<td class="editing"><input type="text" data-field="poste" value="' + escapeHtml(r.poste) + '"></td>' +
+          '<td class="num editing"><input class="num" type="number" data-field="wpm" value="' + r.wpm + '"></td>' +
+          '<td class="num editing"><input class="num" type="number" data-field="accuracy" value="' + r.accuracy + '"></td>' +
+          '<td class="num editing"><input class="num" type="number" data-field="errors" value="' + r.errors + '"></td>' +
+          '<td class="num editing"><input class="num" type="number" data-field="data_entry" value="' + r.data_entry + '"></td>' +
+          '<td class="num editing"><input class="num" type="number" data-field="quiz" value="' + r.quiz + '"></td>' +
+          '<td class="num editing"><input class="num" type="number" data-field="score" value="' + r.score + '"></td>' +
+          '<td>' + dateStr + '</td>' +
+          '<td><div class="row-actions">' +
+            '<button class="btn-sm btn-primary" data-action="save" type="button">Enregistrer</button>' +
+            '<button class="btn-sm btn-ghost" data-action="cancel" type="button">Annuler</button>' +
+          '</div></td>';
+      } else {
+        tr.innerHTML =
+          '<td class="num"><span class="rank-pill' + (rank===1?' gold':'') + '">' + rank + '</span></td>' +
+          '<td>' + escapeHtml(r.nom + " " + r.prenom) + '</td>' +
+          '<td class="num">' + escapeHtml(r.telephone) + '</td>' +
+          '<td>' + escapeHtml(r.poste) + '</td>' +
+          '<td class="num">' + r.wpm + '</td>' +
+          '<td class="num">' + r.accuracy + '%</td>' +
+          '<td class="num">' + r.errors + '</td>' +
+          '<td class="num">' + r.data_entry + '%</td>' +
+          '<td class="num">' + r.quiz + '%</td>' +
+          '<td class="num"><span class="score-pill">' + r.score + '</span></td>' +
+          '<td>' + dateStr + '</td>' +
+          '<td><div class="row-actions">' +
+            '<button class="btn-sm btn-ghost" data-action="edit" type="button">Modifier</button>' +
+          '</div></td>';
+      }
       tbody.appendChild(tr);
     });
     freshIds = {};
+  }
+
+  $("board-tbody").addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-action]");
+    if(!btn) return;
+    var tr = btn.closest("tr[data-id]");
+    var id = tr.getAttribute("data-id");
+    var action = btn.getAttribute("data-action");
+    if(action === "edit"){
+      editingId = id;
+      renderBoard();
+    } else if(action === "cancel"){
+      editingId = null;
+      renderBoard();
+    } else if(action === "save"){
+      saveRow(tr, id);
+    }
+  });
+
+  async function saveRow(tr, id){
+    var textFields = ["nom", "prenom", "telephone", "poste"];
+    var numFields = ["wpm", "accuracy", "errors", "data_entry", "quiz", "score"];
+    var patch = {};
+    for(var i=0;i<textFields.length;i++){
+      var f = textFields[i];
+      var input = tr.querySelector('input[data-field="' + f + '"]');
+      patch[f] = input.value.trim();
+    }
+    if(!patch.nom){ alert("Le nom ne peut pas être vide."); return; }
+    for(var j=0;j<numFields.length;j++){
+      var nf = numFields[j];
+      var ninput = tr.querySelector('input[data-field="' + nf + '"]');
+      var val = parseInt(ninput.value, 10);
+      if(isNaN(val) || val < 0){ alert("Valeur invalide pour le champ \"" + nf + "\"."); return; }
+      patch[nf] = val;
+    }
+    var saveBtn = tr.querySelector('button[data-action="save"]');
+    saveBtn.disabled = true;
+    saveBtn.textContent = "...";
+    var res = await sb.from("candidats").update(patch).eq("id", id).select();
+    if(res.error){
+      alert("Échec de l'enregistrement : " + res.error.message);
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Enregistrer";
+      return;
+    }
+    if(res.data && res.data[0]){
+      var idx = rows.findIndex(function(r){ return r.id === id; });
+      if(idx !== -1) rows[idx] = res.data[0];
+    }
+    editingId = null;
+    renderBoard();
   }
 
   async function loadRows(){
